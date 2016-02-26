@@ -109,6 +109,7 @@ else
         var pluginHooks = this.hooks = new HookCollection();
         
         // given a URL that was encountered by itself (without markup), should return the link text that's to be given to this link
+        // 对于手动输入的链接进行后处理（非MD语法输入的链接）
         pluginHooks.addNoop("plainLinkText");
         
         // called with the orignal text as given to makeHtml. The result of this plugin hook is the actual markdown source that will be cooked

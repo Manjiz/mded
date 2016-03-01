@@ -1,6 +1,6 @@
 ;(function() {
     'use strict';
-
+console.log('hhh')
     var root = this;
 
     var editor,
@@ -92,21 +92,18 @@
         editor.run();
 
         document.getElementById('wmd-editmode-button-'+postfix).addEventListener('click', function() {
-            // dom.classList.remove('editMode');
             dom.classList.remove('liveMode');
             dom.classList.remove('previewMode');
             dom.classList.add('editMode');
         }, false);
         document.getElementById('wmd-livemode-button-'+postfix).addEventListener('click', function() {
             dom.classList.remove('editMode');
-            // dom.classList.remove('liveMode');
             dom.classList.remove('previewMode');
             dom.classList.add('liveMode');
         }, false);
         document.getElementById('wmd-previewmode-button-'+postfix).addEventListener('click', function() {
             dom.classList.remove('editMode');
             dom.classList.remove('liveMode');
-            // dom.classList.remove('previewMode');
             dom.classList.add('previewMode');
         }, false);
         document.getElementById('wmd-fullscreen-button-'+postfix).addEventListener('click', function() {

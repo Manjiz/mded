@@ -4,6 +4,14 @@ mded: 基于[pagedown](https://github.com/ujifgc/pagedown)根据[segmentfault](h
 
 ![images](capture.png)
 
+## 编译
+
+执行以下命令，编译至 dist 文件夹
+
+``` bash
+gulp
+```
+
 ## 使用
 
 ### 引入样式文件
@@ -15,10 +23,7 @@ mded: 基于[pagedown](https://github.com/ujifgc/pagedown)根据[segmentfault](h
 ### 引入脚本文件
 
 ``` html
-<script src="js/Markdown.Converter.js"></script>
-<script src="js/Markdown.Sanitizer.js"></script>
-<script src="js/Markdown.Editor.js"></script>
-<script src="js/Mded.js"></script>
+<script src="js/mded.min.js"></script>
 ```
 
 ### 初始化编辑器

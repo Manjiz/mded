@@ -1,6 +1,6 @@
 ;(function() {
     'use strict';
-console.log('hhh')
+
     var root = this;
 
     var editor,
@@ -38,7 +38,7 @@ console.log('hhh')
                 undo: "撤销 - Ctrl+Z",
                 redo: "重做 - Ctrl+Y",
                 redomac: "重做 - Ctrl+Shift+Z",
-                help: "Markdown 语法",
+                help: "Markdown 语法",    // 优先
                 fullscreen: "全屏",
                 editmode: '编辑模式',
                 livemode: '实时模式',

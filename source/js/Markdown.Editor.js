@@ -67,50 +67,45 @@
     // -------------------------------------------------------------------
 
     // The default text that appears in the dialog input box when entering links.
-    var imageDefaultText = "http://";
-    var linkDefaultText = "http://";
+    var imageDefaultText = 'http://';
+    var linkDefaultText = 'http://';
 
     // -------------------------------------------------------------------
     //  END OF YOUR CHANGES
     // -------------------------------------------------------------------
 
-    // options, if given, can have the following properties:
-    //   options.helpButton = { handler: yourEventHandler }
-    //   options.strings = { italicexample: "slanted text" }
+    // opts, if given, can have the following properties:
+    //   opts.helpButton = { handler: yourEventHandler }
+    //   opts.strings = { italicexample: "slanted text" }
     // `yourEventHandler` is the click handler for the help button.
-    // If `options.helpButton` isn't given, not help button is created.
-    // `options.strings` can have any or all of the same properties as
+    // If `opts.helpButton` isn't given, not help button is created.
+    // `opts.strings` can have any or all of the same properties as
     // `defaultStrings` above, so you can just override some string displayed
     // to the user on a case-by-case basis, or translate all strings to
     // a different language.
     //
-    // For backwards compatibility reasons, the `options` argument can also
+    // For backwards compatibility reasons, the `opts` argument can also
     // be just the `helpButton` object, and `strings.help` can also be set via
     // `helpButton.title`. This should be considered legacy.
-    //
+    // 
     // The constructed editor object has the methods:
     // - getConverter() returns the markdown converter object that was passed to the constructor
     // - run() actually starts the editor; should be called after all necessary plugins are registered. Calling this more than once is a no-op.
     // - refreshPreview() forces the preview to be updated. This method is only available after run() was called.
-    Markdown.Editor = function (markdownConverter, idPostfix, options) {
-        
-        options = options || {};
+    Markdown.Editor = function (markdownConverter, idPostfix, opts) {
+        opts = opts || {};
 
-        if (typeof options.handler === "function") { //backwards compatible behavior
-            options = { helpButton: options };
-        }
-        options.strings = options.strings || {};
-        if (options.helpButton) {
-            options.strings.help = options.strings.help || options.helpButton.title;
-        }
-        var getString = function (identifier) { return options.strings[identifier] || defaultsStrings[identifier]; }
+        opts.strings = opts.strings || {};
+        opts.strings.help = opts.strings.help || (opts.helpButton && opts.helpButton.title);
 
-        idPostfix = idPostfix || "";
+        var getString = function (identifier) { return opts.strings[identifier] || defaultsStrings[identifier]; }
+
+        idPostfix = idPostfix || '';
 
         var hooks = this.hooks = new Markdown.HookCollection();
-        hooks.addNoop("onPreviewRefresh");       // called with no arguments after the preview has been refreshed
-        hooks.addNoop("postBlockquoteCreation"); // called with the user's selection *after* the blockquote was created; should return the actual to-be-inserted text
-        hooks.addFalse("insertImageDialog");     /* called with one parameter: a callback to be called with the URL of the image. If the application creates
+        hooks.addNoop('onPreviewRefresh');       // called with no arguments after the preview has been refreshed
+        hooks.addNoop('postBlockquoteCreation'); // called with the user's selection *after* the blockquote was created; should return the actual to-be-inserted text
+        hooks.addFalse('insertImageDialog');     /* called with one parameter: a callback to be called with the URL of the image. If the application creates
                                                   * its own image insertion dialog, this hook should return true, and the callback should be called with the chosen
                                                   * image url (or null if the user cancelled). If this hook returns false, the default dialog will be used.
                                                   */
@@ -142,14 +137,13 @@
                 }
             }
 
-            uiManager = new UIManager(idPostfix, panels, undoManager, previewManager, commandManager, options.helpButton, getString);
+            uiManager = new UIManager(idPostfix, panels, undoManager, previewManager, commandManager, opts.helpButton, getString);
             uiManager.setUndoRedoButtonStates();
 
             var forceRefresh = that.refreshPreview = function () { previewManager.refresh(true); };
 
             forceRefresh();
         };
-
     }
 
     // before: contains all the text in the input box BEFORE the selection.

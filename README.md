@@ -9,7 +9,7 @@ mded: 基于[pagedown](https://github.com/ujifgc/pagedown)根据[segmentfault](h
 执行以下命令，编译至 dist 文件夹
 
 ``` bash
-gulp
+npm install && gulp
 ```
 
 ## 使用
@@ -17,13 +17,13 @@ gulp
 ### 引入样式文件
 
 ``` html
-<link rel="stylesheet" href="css/mded.css">
+<link rel="stylesheet" href="mded.min.css">
 ```
 
 ### 引入脚本文件
 
 ``` html
-<script src="js/mded.min.js"></script>
+<script src="mded.min.js"></script>
 ```
 
 ### 初始化编辑器
@@ -40,7 +40,7 @@ mded('domid', 'mypostfix', opts);
 
 	- helpButton 帮助按钮，不提供则不会显示
 
-		- title - hover 时显示的字符串
+		- title - hover 时显示的字符串 - （✘ 不再支持这里设置，请前往strings里配置）
 		- handler - 点击时触发的方法
 
 	- strings - 相关文字配置

@@ -6,6 +6,19 @@
     var editor,
         converter = new Markdown.Converter(),
         editorOpts = {
+            // toolbar: {
+            //     left: [
+            //         ['bold', 'italic'],
+            //         ['link', 'quote', 'code', 'image'],
+            //         ['olist', 'ulist', 'heading', 'hr'],
+            //         ['undo', 'redo'],
+            //         ['help']
+            //     ],
+            //     right: [
+            //         ['previewmode', 'livemode', 'editmode'],
+            //         ['fullscreen']
+            //     ]
+            // },
             helpButton: {
                 title: 'Markdown 语法',
                 handler: function() {
@@ -62,31 +75,14 @@
         opts = opts || editorOpts;
 
         dom.setAttribute('class', 'mded editMode');
-
-        var toolbar = document.createElement('div');
-        toolbar.setAttribute('class', 'mded-toolbar');
-        toolbar.setAttribute('id', 'wmd-button-bar-'+postfix);
-        dom.appendChild(toolbar);
-
-        var wmd = document.createElement('div');
-        wmd.setAttribute('class', 'wmd');
-        dom.appendChild(wmd);
-            var wmdInput = document.createElement('textarea');
-            wmdInput.setAttribute('class', 'wmd-input');
-            wmdInput.setAttribute('id', 'wmd-input-'+postfix);
-            wmd.appendChild(wmdInput);
-            var wmdPreview = document.createElement('div');
-            wmdPreview.setAttribute('class', 'wmd-preview');
-            wmd.appendChild(wmdPreview);
-                var wmdPreviewCont = document.createElement('div');
-                wmdPreviewCont.setAttribute('class', 'wmd-preview-cont');
-                wmdPreviewCont.setAttribute('id', 'wmd-preview-'+postfix);
-                wmdPreview.appendChild(wmdPreviewCont);
-
-        var resize = document.createElement('div');
-        resize.setAttribute('class', 'mded-resize');
-        resize.innerHTML = '调整高度';
-        dom.appendChild(resize);
+        dom.innerHTML = '<div class="mded-toolbar" id="wmd-button-bar-'+postfix+'"></div>' +
+                        '<div class="wmd">' +
+                            '<textarea class="wmd-input" id="wmd-input-'+postfix+'"></textarea>' +
+                            '<div class="wmd-preview">' +
+                                '<div class="wmd-preview-cont" id="wmd-preview-'+postfix+'"></div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="mded-resize">调整高度</div>';
 
         editor = new Markdown.Editor(converter, '-'+postfix, opts);
         editor.run();

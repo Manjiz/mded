@@ -2,20 +2,50 @@
 
 (function () {
 
-    var util = {},
-        position = {},
+    var position = {},
         ui = {},
         doc = window.document,
         re = window.RegExp,
         nav = window.navigator,
-        SETTINGS = { lineLength: 72 },
+        SETTINGS = { lineLength: 72 };
 
-    // Used to work around some browser bugs where we can't use feature testing.
-        uaSniffed = {
-            isIE: /msie/.test(nav.userAgent.toLowerCase()),
-            isIE_5or6: /msie 6/.test(nav.userAgent.toLowerCase()) || /msie 5/.test(nav.userAgent.toLowerCase()),
-            isOpera: /opera/.test(nav.userAgent.toLowerCase())
-        };
+    var util = {
+        // TRUE/FALSE when VISIBLE/HIDDEN (display)
+        isVisible: function (elem) {
+            return window.getComputedStyle(elem, null).getPropertyValue('display') !== 'none';
+        },
+        addEvent: function (elem, event, listener) {
+            elem.addEventListener(event, listener, false);
+        },
+        removeEvent: function (elem, event, listener) {
+            elem.removeEventListener(event, listener, false);
+        },
+        // \r\n and \r => \n
+        fixEolChars: function (text) {
+            text = text.replace(/\r\n?/g, '\n');
+            return text;
+        },
+        // pre + regexp + post
+        extendRegExp: function (regexp, pre, post) {
+            pre = pre===null || pre===undefined ? '' : pre;
+            post = post===null || post===undefined ? '' : post;
+            
+            var pattern = regexp.toString();
+            var flags;
+            
+            // Remove the flags and store them temporary.
+            pattern = pattern.replace(/\/([gim]*)$/, function (wholeMatch, flagsPart) {
+                flags = flagsPart;
+                return '';
+            });
+            
+            // Remove the slash delimiters on the regular expression.
+            pattern = pattern.replace(/(^\/|\/$)/g, '');
+            pattern = pre + pattern + post;
+            
+            return new re(pattern, flags);
+        }
+    };
 
     var defaultsStrings = {
         bold: "Strong <strong> Ctrl+B",
@@ -52,57 +82,44 @@
         redomac: "Redo - Ctrl+Shift+Z",
 
         help: "Markdown Editing Help",
-        fullscreen: "全屏",
-        editmode: '编辑模式',
-        livemode: '实时模式',
-        previewmode: "预览模式"
+        fullscreen: "Full Screen",
+        editmode: 'Editing Mode',
+        livemode: 'Living Mode',
+        previewmode: "Previewing Mode"
     };
-
-
-    // -------------------------------------------------------------------
-    //  YOUR CHANGES GO HERE
-    //
-    // I've tried to localize the things you are likely to change to
-    // this area.
-    // -------------------------------------------------------------------
 
     // The default text that appears in the dialog input box when entering links.
     var imageDefaultText = 'http://';
     var linkDefaultText = 'http://';
 
-    // -------------------------------------------------------------------
-    //  END OF YOUR CHANGES
-    // -------------------------------------------------------------------
-
     // opts, if given, can have the following properties:
     //   opts.helpButton = { handler: yourEventHandler }
     //   opts.strings = { italicexample: "slanted text" }
+    //
     // `yourEventHandler` is the click handler for the help button.
     // If `opts.helpButton` isn't given, not help button is created.
     // `opts.strings` can have any or all of the same properties as
     // `defaultStrings` above, so you can just override some string displayed
     // to the user on a case-by-case basis, or translate all strings to
     // a different language.
-    //
-    // For backwards compatibility reasons, the `opts` argument can also
-    // be just the `helpButton` object, and `strings.help` can also be set via
-    // `helpButton.title`. This should be considered legacy.
     // 
     // The constructed editor object has the methods:
     // - getConverter() returns the markdown converter object that was passed to the constructor
     // - run() actually starts the editor; should be called after all necessary plugins are registered. Calling this more than once is a no-op.
     // - refreshPreview() forces the preview to be updated. This method is only available after run() was called.
     Markdown.Editor = function (markdownConverter, idPostfix, opts) {
+        var that = this,
+            panels,
+            hooks = this.hooks = new Markdown.HookCollection(),
+
+            getString = function (identifier) {
+                return opts.strings[identifier] || defaultsStrings[identifier];
+            };
+
         opts = opts || {};
-
         opts.strings = opts.strings || {};
-        opts.strings.help = opts.strings.help || (opts.helpButton && opts.helpButton.title);
-
-        var getString = function (identifier) { return opts.strings[identifier] || defaultsStrings[identifier]; }
-
         idPostfix = idPostfix || '';
 
-        var hooks = this.hooks = new Markdown.HookCollection();
         hooks.addNoop('onPreviewRefresh');       // called with no arguments after the preview has been refreshed
         hooks.addNoop('postBlockquoteCreation'); // called with the user's selection *after* the blockquote was created; should return the actual to-be-inserted text
         hooks.addFalse('insertImageDialog');     /* called with one parameter: a callback to be called with the URL of the image. If the application creates
@@ -112,14 +129,18 @@
 
         this.getConverter = function () { return markdownConverter; }
 
-        var that = this,
-            panels;
-
         this.run = function () {
-            if (panels)
+            if (panels) {
                 return; // already initialized
+            }
 
+            function PanelCollection(postfix) {
+                this.buttonBar = doc.getElementById("wmd-button-bar" + postfix);
+                this.preview = doc.getElementById("wmd-preview" + postfix);
+                this.input = doc.getElementById("wmd-input" + postfix);
+            }
             panels = new PanelCollection(idPostfix);
+
             var commandManager = new CommandManager(hooks, getString, markdownConverter);
             var previewManager = new PreviewManager(markdownConverter, panels, function () { hooks.onPreviewRefresh(); });
             var undoManager, uiManager;
@@ -153,31 +174,26 @@
     // startRegex: a regular expression to find the start tag
     // endRegex: a regular expresssion to find the end tag
     Chunks.prototype.findTags = function (startRegex, endRegex) {
-
         var chunkObj = this;
         var regex;
 
         if (startRegex) {
-
             regex = util.extendRegExp(startRegex, "", "$");
 
-            this.before = this.before.replace(regex,
-                function (match) {
-                    chunkObj.startTag = chunkObj.startTag + match;
-                    return "";
-                });
+            this.before = this.before.replace(regex, function (match) {
+                chunkObj.startTag = chunkObj.startTag + match;
+                return "";
+            });
 
             regex = util.extendRegExp(startRegex, "^", "");
 
-            this.selection = this.selection.replace(regex,
-                function (match) {
-                    chunkObj.startTag = chunkObj.startTag + match;
-                    return "";
-                });
+            this.selection = this.selection.replace(regex, function (match) {
+                chunkObj.startTag = chunkObj.startTag + match;
+                return "";
+            });
         }
 
         if (endRegex) {
-
             regex = util.extendRegExp(endRegex, "", "$");
 
             this.selection = this.selection.replace(regex,
@@ -196,10 +212,9 @@
         }
     };
 
-    // If remove is false, the whitespace is transferred
-    // to the before/after regions.
-    //
-    // If remove is true, the whitespace disappears.
+    // remove
+    //   TRUE: the whitespace is transferred to the before/after regions
+    //   FALSE: the whitespace disappears
     Chunks.prototype.trimWhitespace = function (remove) {
         var beforeReplacer, afterReplacer, that = this;
         if (remove) {
@@ -214,7 +229,6 @@
 
 
     Chunks.prototype.skipLines = function (nLinesBefore, nLinesAfter, findExtraNewlines) {
-
         if (nLinesBefore === undefined) {
             nLinesBefore = 1;
         }
@@ -278,110 +292,6 @@
 
     // end of Chunks
 
-    // A collection of the important regions on the page.
-    // Cached so we don't have to keep traversing the DOM.
-    // Also holds ieCachedRange and ieCachedScrollTop, where necessary; working around
-    // this issue:
-    // Internet explorer has problems with CSS sprite buttons that use HTML
-    // lists.  When you click on the background image "button", IE will
-    // select the non-existent link text and discard the selection in the
-    // textarea.  The solution to this is to cache the textarea selection
-    // on the button's mousedown event and set a flag.  In the part of the
-    // code where we need to grab the selection, we check for the flag
-    // and, if it's set, use the cached area instead of querying the
-    // textarea.
-    //
-    // This ONLY affects Internet Explorer (tested on versions 6, 7
-    // and 8) and ONLY on button clicks.  Keyboard shortcuts work
-    // normally since the focus never leaves the textarea.
-    function PanelCollection(postfix) {
-        this.buttonBar = doc.getElementById("wmd-button-bar" + postfix);
-        this.preview = doc.getElementById("wmd-preview" + postfix);
-        this.input = doc.getElementById("wmd-input" + postfix);
-    };
-
-    // Returns true if the DOM element is visible, false if it's hidden.
-    // Checks if display is anything other than none.
-    util.isVisible = function (elem) {
-
-        if (window.getComputedStyle) {
-            // Most browsers
-            return window.getComputedStyle(elem, null).getPropertyValue("display") !== "none";
-        }
-        else if (elem.currentStyle) {
-            // IE
-            return elem.currentStyle["display"] !== "none";
-        }
-    };
-
-
-    // Adds a listener callback to a DOM element which is fired on a specified
-    // event.
-    util.addEvent = function (elem, event, listener) {
-        if (elem.attachEvent) {
-            // IE only.  The "on" is mandatory.
-            elem.attachEvent("on" + event, listener);
-        }
-        else {
-            // Other browsers.
-            elem.addEventListener(event, listener, false);
-        }
-    };
-
-
-    // Removes a listener callback from a DOM element which is fired on a specified
-    // event.
-    util.removeEvent = function (elem, event, listener) {
-        if (elem.detachEvent) {
-            // IE only.  The "on" is mandatory.
-            elem.detachEvent("on" + event, listener);
-        }
-        else {
-            // Other browsers.
-            elem.removeEventListener(event, listener, false);
-        }
-    };
-
-    // Converts \r\n and \r to \n.
-    util.fixEolChars = function (text) {
-        text = text.replace(/\r\n/g, "\n");
-        text = text.replace(/\r/g, "\n");
-        return text;
-    };
-
-    // Extends a regular expression.  Returns a new RegExp
-    // using pre + regex + post as the expression.
-    // Used in a few functions where we have a base
-    // expression and we want to pre- or append some
-    // conditions to it (e.g. adding "$" to the end).
-    // The flags are unchanged.
-    //
-    // regex is a RegExp, pre and post are strings.
-    util.extendRegExp = function (regex, pre, post) {
-
-        if (pre === null || pre === undefined) {
-            pre = "";
-        }
-        if (post === null || post === undefined) {
-            post = "";
-        }
-
-        var pattern = regex.toString();
-        var flags;
-
-        // Replace the flags with empty space and store them.
-        pattern = pattern.replace(/\/([gim]*)$/, function (wholeMatch, flagsPart) {
-            flags = flagsPart;
-            return "";
-        });
-
-        // Remove the slash delimiters on the regular expression.
-        pattern = pattern.replace(/(^\/|\/$)/g, "");
-        pattern = pre + pattern + post;
-
-        return new re(pattern, flags);
-    }
-
     // UNFINISHED
     // The assignment in the while loop makes jslint cranky.
     // I'll change it to a better loop later.
@@ -405,38 +315,19 @@
 
     position.getPageSize = function () {
 
-        var scrollWidth, scrollHeight;
-        var innerWidth, innerHeight;
+        var scrollWidth, scrollHeight,
+            innerWidth, innerHeight;
 
-        // It's not very clear which blocks work with which browsers.
-        if (self.innerHeight && self.scrollMaxY) {
-            scrollWidth = doc.body.scrollWidth;
-            scrollHeight = self.innerHeight + self.scrollMaxY;
-        }
-        else if (doc.body.scrollHeight > doc.body.offsetHeight) {
+        if (doc.body.scrollHeight > doc.body.offsetHeight) {
             scrollWidth = doc.body.scrollWidth;
             scrollHeight = doc.body.scrollHeight;
-        }
-        else {
+        } else {
             scrollWidth = doc.body.offsetWidth;
             scrollHeight = doc.body.offsetHeight;
         }
 
-        if (self.innerHeight) {
-            // Non-IE browser
-            innerWidth = self.innerWidth;
-            innerHeight = self.innerHeight;
-        }
-        else if (doc.documentElement && doc.documentElement.clientHeight) {
-            // Some versions of IE (IE 6 w/ a DOCTYPE declaration)
-            innerWidth = doc.documentElement.clientWidth;
-            innerHeight = doc.documentElement.clientHeight;
-        }
-        else if (doc.body) {
-            // Other versions of IE
-            innerWidth = doc.body.clientWidth;
-            innerHeight = doc.body.clientHeight;
-        }
+        innerWidth = self.innerWidth;
+        innerHeight = self.innerHeight;
 
         var maxWidth = Math.max(scrollWidth, innerWidth);
         var maxHeight = Math.max(scrollHeight, innerHeight);
@@ -464,7 +355,7 @@
                 }
             }
 
-            if (!uaSniffed.isIE || mode != "moving") {
+            if (mode != "moving") {
                 timer = setTimeout(refreshState, 1);
             }
             else {
@@ -562,34 +453,25 @@
         };
 
         var handleCtrlYZ = function (event) {
-
             var handled = false;
-
             if ((event.ctrlKey || event.metaKey) && !event.altKey) {
-
-                // IE and Opera do not support charCode.
-                var keyCode = event.charCode || event.keyCode;
+                var keyCode = event.keyCode;
                 var keyCodeChar = String.fromCharCode(keyCode);
-
                 switch (keyCodeChar.toLowerCase()) {
-
                     case "y":
                         undoObj.redo();
                         handled = true;
                         break;
-
                     case "z":
                         if (!event.shiftKey) {
                             undoObj.undo();
-                        }
-                        else {
+                        } else {
                             undoObj.redo();
                         }
                         handled = true;
                         break;
                 }
             }
-
             if (handled) {
                 if (event.preventDefault) {
                     event.preventDefault();
@@ -647,7 +529,7 @@
             });
 
             var handlePaste = function () {
-                if (uaSniffed.isIE || (inputStateObj && inputStateObj.text != panels.input.value)) {
+                if (inputStateObj && inputStateObj.text != panels.input.value) {
                     if (timer == undefined) {
                         mode = "paste";
                         saveState();
@@ -708,7 +590,7 @@
                 return;
             }
 
-            if (inputArea.selectionStart !== undefined && !uaSniffed.isOpera) {
+            if (inputArea.selectionStart !== undefined) {
 
                 inputArea.focus();
                 inputArea.selectionStart = stateObj.start;
@@ -989,14 +871,7 @@
 
             var fullTop = position.getTop(panels.input) - getDocScrollTop();
 
-            if (uaSniffed.isIE) {
-                setTimeout(function () {
-                    window.scrollBy(0, fullTop - emptyTop);
-                }, 0);
-            }
-            else {
-                window.scrollBy(0, fullTop - emptyTop);
-            }
+            window.scrollBy(0, fullTop - emptyTop);
         };
 
         var init = function () {
@@ -1028,24 +903,13 @@
 
         style.zIndex = "1000";
 
-        if (uaSniffed.isIE) {
-            style.filter = "alpha(opacity=50)";
-        }
-        else {
-            style.opacity = "0.5";
-        }
+        style.opacity = "0.5";
 
         var pageSize = position.getPageSize();
         style.height = pageSize[1] + "px";
 
-        if (uaSniffed.isIE) {
-            style.left = doc.documentElement.scrollLeft;
-            style.width = doc.documentElement.clientWidth;
-        }
-        else {
-            style.left = "0";
-            style.width = "100%";
-        }
+        style.left = "0";
+        style.width = "100%";
 
         doc.body.appendChild(background);
         return background;
@@ -1074,7 +938,7 @@
         // Used as a keydown event handler. Esc dismisses the prompt.
         // Key code 27 is ESC.
         var checkEscape = function (key) {
-            var code = (key.charCode || key.keyCode);
+            var code = key.keyCode;
             if (code === 27) {
                 if (key.stopPropagation) key.stopPropagation();
                 close(true);
@@ -1174,11 +1038,6 @@
             dialog.style.top = "50%";
             dialog.style.left = "50%";
             dialog.style.display = "block";
-            if (uaSniffed.isIE_5or6) {
-                dialog.style.position = "absolute";
-                dialog.style.top = doc.documentElement.scrollTop + 200 + "px";
-                dialog.style.left = "50%";
-            }
             doc.body.appendChild(dialog);
 
             // This has to be done AFTER adding the dialog to the form if you
@@ -1219,18 +1078,12 @@
         makeSpritedButtonRow();
 
         var keyEvent = "keydown";
-        if (uaSniffed.isOpera) {
-            keyEvent = "keypress";
-        }
 
         util.addEvent(inputBox, keyEvent, function (key) {
-
             // Check to see if we have a button key and, if so execute the callback.
             if ((key.ctrlKey || key.metaKey) && !key.altKey && !key.shiftKey) {
-
-                var keyCode = key.charCode || key.keyCode;
+                var keyCode = key.keyCode;
                 var keyCodeStr = String.fromCharCode(keyCode).toLowerCase();
-
                 switch (keyCodeStr) {
                     case "b":
                         doClick(buttons.bold);
@@ -1291,7 +1144,7 @@
         // Auto-indent on shift-enter
         util.addEvent(inputBox, "keyup", function (key) {
             if (key.shiftKey && !key.ctrlKey && !key.metaKey) {
-                var keyCode = key.charCode || key.keyCode;
+                var keyCode = key.keyCode;
                 // Character 13 is Enter
                 if (keyCode === 13) {
                     var fakeButton = {};
@@ -1301,20 +1154,8 @@
             }
         });
 
-        // special handler because IE clears the context of the textbox on ESC
-        if (uaSniffed.isIE) {
-            util.addEvent(inputBox, "keydown", function (key) {
-                var code = key.keyCode;
-                if (code === 27) {
-                    return false;
-                }
-            });
-        }
-
-
         // Perform the button's action.
         function doClick(button) {
-
             inputBox.focus();
 
             if (button.textOp) {
@@ -1388,19 +1229,6 @@
                 button.onmouseout = function () {
                     image.style.backgroundPosition = this.XShift + " " + normalYShift;
                 };
-
-                // IE tries to select the background image "button" text (it's
-                // implemented in a list item) so we have to cache the selection
-                // on mousedown.
-                if (uaSniffed.isIE) {
-                    button.onmousedown = function () {
-                        if (doc.activeElement && doc.activeElement !== panels.input) { // we're not even in the input box, so there's no selection
-                            return;
-                        }
-                        panels.ieCachedRange = document.selection.createRange();
-                        panels.ieCachedScrollTop = panels.input.scrollTop;
-                    };
-                }
 
                 if (!button.isHelp) {
                     button.onclick = function () {
@@ -1535,7 +1363,6 @@
         this.getString = getString;
         this.converter = converter;
     }
-
     var commandProto = CommandManager.prototype;
 
     // The markdown symbols - 4 spaces = code, > = blockquote, etc.
@@ -1590,16 +1417,14 @@
         if ((prevStars >= nStars) && (prevStars != 2 || nStars != 1)) {
             chunk.before = chunk.before.replace(re("[*]{" + nStars + "}$", ""), "");
             chunk.after = chunk.after.replace(re("^[*]{" + nStars + "}", ""), "");
-        }
-        else if (!chunk.selection && starsAfter) {
+        } else if (!chunk.selection && starsAfter) {
             // It's not really clear why this code is necessary.  It just moves
             // some arbitrary stuff around.
             chunk.after = chunk.after.replace(/^([*_]*)/, "");
             chunk.before = chunk.before.replace(/(\s?)$/, "");
             var whitespace = re.$1;
             chunk.before = chunk.before + starsAfter + whitespace;
-        }
-        else {
+        } else {
 
             // In most cases, if you don't have any selected text and click the button
             // you'll get a selected, marked up region with the default text inserted.

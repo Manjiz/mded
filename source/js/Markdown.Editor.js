@@ -823,16 +823,11 @@
             }
         };
 
-        var getScaleFactor = function (panel) {
-            if (panel.scrollHeight <= panel.clientHeight) {
-                return 1;
-            }
-            return panel.scrollTop / (panel.scrollHeight - panel.clientHeight);
-        };
-
         var setPanelScrollTops = function () {
+            // 预览框滚动到底部
+            // ---如果可能，能根据光标的位置进行滚动---
             if (panels.preview) {
-                panels.preview.scrollTop = (panels.preview.scrollHeight - panels.preview.clientHeight) * getScaleFactor(panels.preview);
+                panels.preview.scrollTop = panels.preview.scrollHeight;
             }
         };
 
@@ -871,7 +866,7 @@
             window.scrollBy(0, fullTop - emptyTop);
         };
 
-        // INIT
+        // Init
         setupEvents(panels.input, applyTimeout);
         makePreviewHtml();
         if (panels.preview) {

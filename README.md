@@ -132,7 +132,7 @@ gte IE9, gte FF3.5, gte Chrome4, gte Safari3.1, gte Opera10.5 才开始支持 tr
 
 我也和原作者一样困惑，为何执行创建弹框的函数createDialog后需要 `setTimeout(function() {...}, 0);` 来实现输入框文本的选择。
 
-也许是插入 DOM 的时候有延迟吧，奇怪的是在 console.log 作测试的时候并没发生这种情况
+也许是插入 DOM 的时候有延迟吧，奇怪的是在 console 作测试的时候并没发生这种情况
 
 ### 预览框的 innerHTML 操作
 

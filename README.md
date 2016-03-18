@@ -4,6 +4,8 @@ mded: 基于[pagedown](https://github.com/ujifgc/pagedown)根据[segmentfault](h
 
 ![images](capture.png)
 
+注意：本项目不支持任何版本IE或IE内核的浏览器，如果正常，那也不奇怪。
+
 ## 编译
 
 执行以下命令，编译至 dist 文件夹
@@ -73,3 +75,75 @@ mded('domid', 'mypostfix', opts);
 		- editmode: 编辑模式，hover 时显示
 		- livemode: 实时模式，hover 时显示
 		- previewmode: 预览模式，hover 时显示
+
+
+## 特别说明
+
+我将把大量兼容古董浏览器的东西去掉，但为了尊重原作者，特把部分兼容代码或bug列出来给大家供奉。
+
+### Chrome6/7 时代正则的一个bug
+
+ - [http://meta.stackexchange.com/questions/63307/blockquote-glitch-in-editor-in-chrome-6-and-7/65985#65985](http://meta.stackexchange.com/questions/63307/blockquote-glitch-in-editor-in-chrome-6-and-7/65985#65985)
+
+原代码：
+
+``` javascript
+if (navigator.userAgent.match(/Chrome/)) {
+    "X".match(/()./);
+}
+this.selection = this.selection.replace(/(^\n*)/, "");
+this.startTag = this.startTag + re.$1;
+```
+
+### 获取元素距离页面顶部的距离
+
+原代码：
+
+``` javascript
+// 需要用到一个循环来逐层获取累加
+var result = elem.offsetTop;
+if (!isInner) {
+    while (elem = elem.offsetParent) {
+        result += elem.offsetTop;
+    }
+}
+return result;
+```
+
+修改后代码：
+
+``` javascript
+return elem.getBoundingClientRect().top + document.documentElement.scrollTop;
+```
+
+### 蒙层
+
+原作者设置了一个 absolute 的蒙层，然后用了段 JS 来计算页面高度以设置蒙层的高度，但是为何不用 fixed？我把样式从 JS 中抽出来了。
+
+### 弹框的居中
+
+同样，原作者用了JS来计算元素的高度，然后 `top:50%;margin-top:-halfofheight;` 这样居中；
+
+我的做法是 `top:50%;transform:translate(0, -50%);`，如果不考虑那么多兼容，这是一件非常酸爽的事情。
+
+gte IE9, gte FF3.5, gte Chrome4, gte Safari3.1, gte Opera10.5 才开始支持 transform（来自caniuse），而 3D Tranforms 则要更后得到支持。
+
+### 选择的触发 - 未解之谜
+
+我也和原作者一样困惑，为何执行创建弹框的函数createDialog后需要 `setTimeout(function() {...}, 0);` 来实现输入框文本的选择。
+
+也许是插入 DOM 的时候有延迟吧，奇怪的是在 console.log 作测试的时候并没发生这种情况
+
+### 预览框的 innerHTML 操作
+
+原注释如下：
+
+``` javascript
+// IE doesn't let you use innerHTML if the element is contained somewhere in a table
+// (which is the case for inline editing) -- in that case, detach the element, set the
+// value, and reattach. Yes, that *is* ridiculous.
+```
+
+意思是，在IE中，如果一个元素包含在 table 里的任意位置，那么如果要给他设置 innerHTML 是不可能的，解决办法是，把元素移除，再设置 innerHTML，最后重新插进去。
+
+（这是哪个版本的 IE？我没测试过，有兴趣的可以去试下）

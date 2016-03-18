@@ -1,92 +1,51 @@
 ﻿// needs Markdown.Converter.js at the moment
 
 (function () {
-
-    var position = {},
-        ui = {},
-        doc = window.document,
+    var doc = window.document,
         re = window.RegExp,
         nav = window.navigator,
-        SETTINGS = { lineLength: 72 };
+        SETTINGS = { lineLength: 72 },
 
-    var util = {
-        // TRUE/FALSE when VISIBLE/HIDDEN (display)
-        isVisible: function (elem) {
-            return window.getComputedStyle(elem, null).getPropertyValue('display') !== 'none';
-        },
-        addEvent: function (elem, event, listener) {
-            elem.addEventListener(event, listener, false);
-        },
-        removeEvent: function (elem, event, listener) {
-            elem.removeEventListener(event, listener, false);
-        },
-        // \r\n and \r => \n
-        fixEolChars: function (text) {
-            text = text.replace(/\r\n?/g, '\n');
-            return text;
-        },
-        // pre + regexp + post
-        extendRegExp: function (regexp, pre, post) {
-            pre = pre===null || pre===undefined ? '' : pre;
-            post = post===null || post===undefined ? '' : post;
+        defaultsStrings = {
+            bold: "Strong <strong> Ctrl+B",
+            boldexample: "strong text",
+        
+            italic: "Emphasis <em> Ctrl+I",
+            italicexample: "emphasized text",
+    
+            link: "Hyperlink <a> Ctrl+L",
+            linkdescription: "enter link description here",
+            linkdialog: "<p><b>Insert Hyperlink</b></p><p>http://example.com/ \"optional title\"</p>",
             
-            var pattern = regexp.toString();
-            var flags;
+            quote: "Blockquote <blockquote> Ctrl+Q",
+            quoteexample: "Blockquote",
             
-            // Remove the flags and store them temporary.
-            pattern = pattern.replace(/\/([gim]*)$/, function (wholeMatch, flagsPart) {
-                flags = flagsPart;
-                return '';
-            });
+            code: "Code Sample <pre><code> Ctrl+K",
+            codeexample: "enter code here",
             
-            // Remove the slash delimiters on the regular expression.
-            pattern = pattern.replace(/(^\/|\/$)/g, '');
-            pattern = pre + pattern + post;
+            image: "Image <img> Ctrl+G",
+            imagedescription: "enter image description here",
+            imagedialog: "<p><b>Insert Image</b></p><p>http://example.com/images/diagram.jpg \"optional title\"<br><br>Need <a href='http://www.google.com/search?q=free+image+hosting' target='_blank'>free image hosting?</a></p>",
             
-            return new re(pattern, flags);
-        }
-    };
-
-    var defaultsStrings = {
-        bold: "Strong <strong> Ctrl+B",
-        boldexample: "strong text",
-
-        italic: "Emphasis <em> Ctrl+I",
-        italicexample: "emphasized text",
-
-        link: "Hyperlink <a> Ctrl+L",
-        linkdescription: "enter link description here",
-        linkdialog: "<p><b>Insert Hyperlink</b></p><p>http://example.com/ \"optional title\"</p>",
-
-        quote: "Blockquote <blockquote> Ctrl+Q",
-        quoteexample: "Blockquote",
-
-        code: "Code Sample <pre><code> Ctrl+K",
-        codeexample: "enter code here",
-
-        image: "Image <img> Ctrl+G",
-        imagedescription: "enter image description here",
-        imagedialog: "<p><b>Insert Image</b></p><p>http://example.com/images/diagram.jpg \"optional title\"<br><br>Need <a href='http://www.google.com/search?q=free+image+hosting' target='_blank'>free image hosting?</a></p>",
-
-        olist: "Numbered List <ol> Ctrl+O",
-        ulist: "Bulleted List <ul> Ctrl+U",
-        litem: "List item",
-
-        heading: "Heading <h1>/<h2> Ctrl+H",
-        headingexample: "Heading",
-
-        hr: "Horizontal Rule <hr> Ctrl+R",
-
-        undo: "Undo - Ctrl+Z",
-        redo: "Redo - Ctrl+Y",
-        redomac: "Redo - Ctrl+Shift+Z",
-
-        help: "Markdown Editing Help",
-        fullscreen: "Full Screen",
-        editmode: 'Editing Mode',
-        livemode: 'Living Mode',
-        previewmode: "Previewing Mode"
-    };
+            olist: "Numbered List <ol> Ctrl+O",
+            ulist: "Bulleted List <ul> Ctrl+U",
+            litem: "List item",
+            
+            heading: "Heading <h1>/<h2> Ctrl+H",
+            headingexample: "Heading",
+            
+            hr: "Horizontal Rule <hr> Ctrl+R",
+            
+            undo: "Undo - Ctrl+Z",
+            redo: "Redo - Ctrl+Y",
+            redomac: "Redo - Ctrl+Shift+Z",
+            
+            help: "Markdown Editing Help",
+            fullscreen: "Full Screen",
+            editmode: 'Editing Mode',
+            livemode: 'Living Mode',
+            previewmode: "Previewing Mode"
+        };
 
     // The default text that appears in the dialog input box when entering links.
     var imageDefaultText = 'http://';
@@ -167,12 +126,168 @@
         };
     }
 
+    var util = {
+        // TRUE/FALSE when VISIBLE/HIDDEN (display)
+        isVisible: function (elem) {
+            return window.getComputedStyle(elem, null).getPropertyValue('display') !== 'none';
+        },
+        addEvent: function (elem, event, listener) {
+            elem.addEventListener(event, listener, false);
+        },
+        removeEvent: function (elem, event, listener) {
+            elem.removeEventListener(event, listener, false);
+        },
+        // \r\n and \r => \n
+        fixEolChars: function (text) {
+            text = text.replace(/\r\n?/g, '\n');
+            return text;
+        },
+        // pre + regexp + post
+        extendRegExp: function (regexp, pre, post) {
+            pre = pre===null || pre===undefined ? '' : pre;
+            post = post===null || post===undefined ? '' : post;
+            
+            var pattern = regexp.toString();
+            var flags;
+            
+            // Remove the flags and store them temporary.
+            pattern = pattern.replace(/\/([gim]*)$/, function (wholeMatch, flagsPart) {
+                flags = flagsPart;
+                return '';
+            });
+            
+            // Remove the slash delimiters on the regular expression.
+            pattern = pattern.replace(/(^\/|\/$)/g, '');
+            pattern = pre + pattern + post;
+            
+            return new re(pattern, flags);
+        }
+    };
+    var position = {
+        getTop: function (elem) {
+            return elem.getBoundingClientRect().top + document.documentElement.scrollTop;
+        },
+        getHeight: function (elem) {
+            return elem.offsetHeight || elem.scrollHeight;
+        },
+        getWidth: function (elem) {
+            return elem.offsetWidth || elem.scrollWidth;
+        },
+        getPageSize: function () {
+            var scrollWidth, scrollHeight,
+                innerWidth, innerHeight;
+            
+            if (doc.body.scrollHeight > doc.body.offsetHeight) {
+                scrollWidth = doc.body.scrollWidth;
+                scrollHeight = doc.body.scrollHeight;
+            } else {
+                scrollWidth = doc.body.offsetWidth;
+                scrollHeight = doc.body.offsetHeight;
+            }
+            
+            innerWidth = self.innerWidth;
+            innerHeight = self.innerHeight;
+    
+            var maxWidth = Math.max(scrollWidth, innerWidth);
+            var maxHeight = Math.max(scrollHeight, innerHeight);
+            return [maxWidth, maxHeight, innerWidth, innerHeight];
+        }
+    };
+    var ui = {
+        // 弹框蒙层
+        createBackground: function () {
+            var background = doc.body.appendChild(doc.createElement('div')),
+                height = position.getPageSize()[1] + 'px';
+            background.className = 'wmd-prompt-background';
+            return background;
+        },
+        /**
+         * @param text - title of this prompt
+         * @param defaultInputText - default text of input field
+         * @param callback - when the prompt is dismissed
+         */
+        prompt: function (text, defaultInputText, callback) {
+            var dialog, input;
+            
+            defaultInputText = defaultInputText===undefined ? '' : defaultInputText;
+    
+            // ESC/27. dismisses the prompt
+            var checkEscape = function (key) {
+                var code = key.keyCode;
+                if (code === 27) {
+                    key.stopPropagation && key.stopPropagation();
+                    close(true);
+                    return false;
+                }
+            };
+
+            var close = function (isCancel) {
+                util.removeEvent(doc.body, 'keyup', checkEscape);
+                var text = input.value;
+    
+                if (isCancel) {
+                    text = null;
+                } else {
+                    // fix string like "http://http://xxx.com"
+                    text = text.replace(/^http:\/\/(https?|ftp):\/\//, '$1://');
+                    if (!/^(?:https?|ftp):\/\//.test(text)) {
+                        text = 'http://' + text;
+                    }
+                }
+                
+                dialog.parentNode.removeChild(dialog);
+                
+                callback(text);
+                return false;
+            };
+            
+            // dialog = question + form (input + okButton + cancelButton)
+            var createDialog = function () {
+                dialog = doc.body.appendChild(doc.createElement('div'));
+                dialog.className = 'wmd-prompt-dialog';
+                    var question = dialog.appendChild(doc.createElement('div'));
+                    question.innerHTML = text;
+                    var form = dialog.appendChild(doc.createElement('form')),
+                        style = form.style;
+                    form.onsubmit = function () { return close(false); };
+                        input = form.appendChild(doc.createElement('input'));
+                        input.type = 'text';
+                        input.value = defaultInputText;
+                        var okButton = form.appendChild(doc.createElement('button'));
+                        okButton.onclick = function () { return close(false); };
+                        okButton.innerHTML = 'OK';
+                        var cancelButton = form.appendChild(doc.createElement('button'));
+                        cancelButton.onclick = function () { return close(true); };
+                        cancelButton.innerHTML = 'Cancel';
+                util.addEvent(doc.body, 'keyup', checkEscape);
+            };
+
+            // ---Why need a timeout?---
+            createDialog();
+            setTimeout(function () {
+                var defTextLen = defaultInputText.length;
+                if (input.selectionStart !== undefined) {
+                    input.selectionStart = 0;
+                    input.selectionEnd = defTextLen;
+                    input.focus();
+                } else if (input.createTextRange) {
+                    var range = input.createTextRange();
+                    range.collapse(false);
+                    range.moveStart('character', -defTextLen);
+                    range.moveEnd('character', defTextLen);
+                    range.select(); 
+                }
+            }, 0);
+        }
+    };
+
     // before: contains all the text in the input box BEFORE the selection.
     // after: contains all the text in the input box AFTER the selection.
     function Chunks() { }
 
     // startRegex: a regular expression to find the start tag
     // endRegex: a regular expresssion to find the end tag
+    // link / code / image / list would trigger it...
     Chunks.prototype.findTags = function (startRegex, endRegex) {
         var chunkObj = this;
         var regex;
@@ -227,26 +342,12 @@
         this.selection = this.selection.replace(/^(\s*)/, beforeReplacer).replace(/(\s*)$/, afterReplacer);
     };
 
-
     Chunks.prototype.skipLines = function (nLinesBefore, nLinesAfter, findExtraNewlines) {
-        if (nLinesBefore === undefined) {
-            nLinesBefore = 1;
-        }
-
-        if (nLinesAfter === undefined) {
-            nLinesAfter = 1;
-        }
-
-        nLinesBefore++;
-        nLinesAfter++;
+        nLinesBefore = (nLinesBefore===undefined ? 1 : nLinesBefore) + 1;
+        nLinesAfter = (nLinesAfter===undefined ? 1 : nLinesAfter) + 1;
 
         var regexText;
         var replacementText;
-
-        // chrome bug ... documented at: http://meta.stackexchange.com/questions/63307/blockquote-glitch-in-editor-in-chrome-6-and-7/65985#65985
-        if (navigator.userAgent.match(/Chrome/)) {
-            "X".match(/()./);
-        }
 
         this.selection = this.selection.replace(/(^\n*)/, "");
 
@@ -260,7 +361,6 @@
         this.after = this.after + re.$1;
 
         if (this.before) {
-
             regexText = replacementText = "";
 
             while (nLinesBefore--) {
@@ -275,7 +375,6 @@
         }
 
         if (this.after) {
-
             regexText = replacementText = "";
 
             while (nLinesAfter--) {
@@ -290,58 +389,13 @@
         }
     };
 
-    // end of Chunks
-
-    // UNFINISHED
-    // The assignment in the while loop makes jslint cranky.
-    // I'll change it to a better loop later.
-    position.getTop = function (elem, isInner) {
-        var result = elem.offsetTop;
-        if (!isInner) {
-            while (elem = elem.offsetParent) {
-                result += elem.offsetTop;
-            }
-        }
-        return result;
-    };
-
-    position.getHeight = function (elem) {
-        return elem.offsetHeight || elem.scrollHeight;
-    };
-
-    position.getWidth = function (elem) {
-        return elem.offsetWidth || elem.scrollWidth;
-    };
-
-    position.getPageSize = function () {
-
-        var scrollWidth, scrollHeight,
-            innerWidth, innerHeight;
-
-        if (doc.body.scrollHeight > doc.body.offsetHeight) {
-            scrollWidth = doc.body.scrollWidth;
-            scrollHeight = doc.body.scrollHeight;
-        } else {
-            scrollWidth = doc.body.offsetWidth;
-            scrollHeight = doc.body.offsetHeight;
-        }
-
-        innerWidth = self.innerWidth;
-        innerHeight = self.innerHeight;
-
-        var maxWidth = Math.max(scrollWidth, innerWidth);
-        var maxHeight = Math.max(scrollHeight, innerHeight);
-        return [maxWidth, maxHeight, innerWidth, innerHeight];
-    };
-
     // Handles pushing and popping TextareaStates for undo/redo commands.
     // I should rename the stack variables to list.
     function UndoManager(callback, panels) {
-
         var undoObj = this;
         var undoStack = []; // A stack of undo states
         var stackPtr = 0; // The index of the current state
-        var mode = "none";
+        var mode = 'none';
         var lastState; // The last state
         var timer; // The setTimeout handle for cancelling the timer
         var inputStateObj;
@@ -355,10 +409,9 @@
                 }
             }
 
-            if (mode != "moving") {
+            if (mode != 'moving') {
                 timer = setTimeout(refreshState, 1);
-            }
-            else {
+            } else {
                 inputStateObj = null;
             }
         };
@@ -562,7 +615,6 @@
     // The input textarea state/contents.
     // This is used to implement undo/redo by the undo manager.
     function TextareaState(panels, isInitialState) {
-
         // Aliases
         var stateObj = this;
         var inputArea = panels.input;
@@ -700,7 +752,6 @@
     };
 
     function PreviewManager(converter, panels, previewRefreshCallback) {
-
         var managerObj = this;
         var timeout;
         var elapsedTime;
@@ -710,72 +761,55 @@
 
         // Adds event listeners to elements
         var setupEvents = function (inputElem, listener) {
-
-            util.addEvent(inputElem, "input", listener);
+            util.addEvent(inputElem, 'input', listener);
             inputElem.onpaste = listener;
             inputElem.ondrop = listener;
-
-            util.addEvent(inputElem, "keypress", listener);
-            util.addEvent(inputElem, "keydown", listener);
+            util.addEvent(inputElem, 'keypress', listener);
+            util.addEvent(inputElem, 'keydown', listener);
         };
 
         var getDocScrollTop = function () {
-
             var result = 0;
-
             if (window.innerHeight) {
                 result = window.pageYOffset;
+            } else if (doc.documentElement && doc.documentElement.scrollTop) {
+                result = doc.documentElement.scrollTop;
+            } else if (doc.body) {
+                result = doc.body.scrollTop;
             }
-            else
-                if (doc.documentElement && doc.documentElement.scrollTop) {
-                    result = doc.documentElement.scrollTop;
-                }
-                else
-                    if (doc.body) {
-                        result = doc.body.scrollTop;
-                    }
-
             return result;
         };
 
         var makePreviewHtml = function () {
-
-            // If there is no registered preview panel
-            // there is nothing to do.
-            if (!panels.preview)
+            // If there is no registered preview panel, there is nothing to do.
+            if (!panels.preview) {
                 return;
-
+            }
 
             var text = panels.input.value;
             if (text && text == oldInputText) {
                 return; // Input text hasn't changed.
-            }
-            else {
+            } else {
                 oldInputText = text;
             }
 
             var prevTime = new Date().getTime();
-
+            // 核心 Markdown 转换
             text = converter.makeHtml(text);
-
-            // Calculate the processing time of the HTML creation.
-            // It's used as the delay time in the event listener.
-            var currTime = new Date().getTime();
-            elapsedTime = currTime - prevTime;
+            // 转换超时将会直接把输入框文本放到预览框，直到转换完成
+            elapsedTime = new Date().getTime() - prevTime;
 
             pushPreviewHtml(text);
         };
 
         // setTimeout is already used.  Used as an event listener.
         var applyTimeout = function () {
-
             if (timeout) {
                 clearTimeout(timeout);
                 timeout = undefined;
             }
 
             if (startType !== "manual") {
-
                 var delay = 0;
 
                 if (startType === "delayed") {
@@ -803,12 +837,10 @@
         };
 
         this.refresh = function (requiresRefresh) {
-
             if (requiresRefresh) {
                 oldInputText = "";
                 makePreviewHtml();
-            }
-            else {
+            } else {
                 applyTimeout();
             }
         };
@@ -819,46 +851,11 @@
 
         var isFirstTimeFilled = true;
 
-        // IE doesn't let you use innerHTML if the element is contained somewhere in a table
-        // (which is the case for inline editing) -- in that case, detach the element, set the
-        // value, and reattach. Yes, that *is* ridiculous.
-        var ieSafePreviewSet = function (text) {
-            var preview = panels.preview;
-            var parent = preview.parentNode;
-            var sibling = preview.nextSibling;
-            parent.removeChild(preview);
-            preview.innerHTML = text;
-            if (!sibling)
-                parent.appendChild(preview);
-            else
-                parent.insertBefore(preview, sibling);
-        }
-
-        var nonSuckyBrowserPreviewSet = function (text) {
-            panels.preview.innerHTML = text;
-        }
-
-        var previewSetter;
-
-        var previewSet = function (text) {
-            if (previewSetter)
-                return previewSetter(text);
-
-            try {
-                nonSuckyBrowserPreviewSet(text);
-                previewSetter = nonSuckyBrowserPreviewSet;
-            } catch (e) {
-                previewSetter = ieSafePreviewSet;
-                previewSetter(text);
-            }
-        };
-
         var pushPreviewHtml = function (text) {
-
             var emptyTop = position.getTop(panels.input) - getDocScrollTop();
 
             if (panels.preview) {
-                previewSet(text);
+                panels.preview.innerHTML = text;
                 previewRefreshCallback();
             }
 
@@ -874,200 +871,12 @@
             window.scrollBy(0, fullTop - emptyTop);
         };
 
-        var init = function () {
-
-            setupEvents(panels.input, applyTimeout);
-            makePreviewHtml();
-
-            if (panels.preview) {
-                panels.preview.scrollTop = 0;
-            }
-        };
-
-        init();
-    };
-
-    // Creates the background behind the hyperlink text entry box.
-    // And download dialog
-    // Most of this has been moved to CSS but the div creation and
-    // browser-specific hacks remain here.
-    ui.createBackground = function () {
-
-        var background = doc.createElement("div"),
-            style = background.style;
-        
-        background.className = "wmd-prompt-background";
-        
-        style.position = "absolute";
-        style.top = "0";
-
-        style.zIndex = "1000";
-
-        style.opacity = "0.5";
-
-        var pageSize = position.getPageSize();
-        style.height = pageSize[1] + "px";
-
-        style.left = "0";
-        style.width = "100%";
-
-        doc.body.appendChild(background);
-        return background;
-    };
-
-    // This simulates a modal dialog box and asks for the URL when you
-    // click the hyperlink or image buttons.
-    //
-    // text: The html for the input box.
-    // defaultInputText: The default value that appears in the input box.
-    // callback: The function which is executed when the prompt is dismissed, either via OK or Cancel.
-    //      It receives a single argument; either the entered text (if OK was chosen) or null (if Cancel
-    //      was chosen).
-    ui.prompt = function (text, defaultInputText, callback) {
-
-        // These variables need to be declared at this level since they are used
-        // in multiple functions.
-        var dialog;         // The dialog box.
-        var input;         // The text box where you enter the hyperlink.
-
-
-        if (defaultInputText === undefined) {
-            defaultInputText = "";
+        // INIT
+        setupEvents(panels.input, applyTimeout);
+        makePreviewHtml();
+        if (panels.preview) {
+            panels.preview.scrollTop = 0;
         }
-
-        // Used as a keydown event handler. Esc dismisses the prompt.
-        // Key code 27 is ESC.
-        var checkEscape = function (key) {
-            var code = key.keyCode;
-            if (code === 27) {
-                if (key.stopPropagation) key.stopPropagation();
-                close(true);
-                return false;
-            }
-        };
-
-        // Dismisses the hyperlink input box.
-        // isCancel is true if we don't care about the input text.
-        // isCancel is false if we are going to keep the text.
-        var close = function (isCancel) {
-            util.removeEvent(doc.body, "keyup", checkEscape);
-            var text = input.value;
-
-            if (isCancel) {
-                text = null;
-            }
-            else {
-                // Fixes common pasting errors.
-                text = text.replace(/^http:\/\/(https?|ftp):\/\//, '$1://');
-                if (!/^(?:https?|ftp):\/\//.test(text))
-                    text = 'http://' + text;
-            }
-
-            dialog.parentNode.removeChild(dialog);
-
-            callback(text);
-            return false;
-        };
-
-
-
-        // Create the text input box form/window.
-        var createDialog = function () {
-
-            // The main dialog box.
-            dialog = doc.createElement("div");
-            dialog.className = "wmd-prompt-dialog";
-            dialog.style.padding = "10px;";
-            dialog.style.position = "fixed";
-            dialog.style.width = "400px";
-            dialog.style.zIndex = "1001";
-
-            // The dialog text.
-            var question = doc.createElement("div");
-            question.innerHTML = text;
-            question.style.padding = "5px";
-            dialog.appendChild(question);
-
-            // The web form container for the text box and buttons.
-            var form = doc.createElement("form"),
-                style = form.style;
-            form.onsubmit = function () { return close(false); };
-            style.padding = "0";
-            style.margin = "0";
-            style.cssFloat = "left";
-            style.width = "100%";
-            style.textAlign = "center";
-            style.position = "relative";
-            dialog.appendChild(form);
-
-            // The input text box
-            input = doc.createElement("input");
-            input.type = "text";
-            input.value = defaultInputText;
-            style = input.style;
-            style.display = "block";
-            style.width = "80%";
-            style.marginLeft = style.marginRight = "auto";
-            form.appendChild(input);
-
-            // The ok button
-            var okButton = doc.createElement("input");
-            okButton.type = "button";
-            okButton.onclick = function () { return close(false); };
-            okButton.value = "OK";
-            style = okButton.style;
-            style.margin = "10px";
-            style.display = "inline";
-            style.width = "7em";
-
-
-            // The cancel button
-            var cancelButton = doc.createElement("input");
-            cancelButton.type = "button";
-            cancelButton.onclick = function () { return close(true); };
-            cancelButton.value = "Cancel";
-            style = cancelButton.style;
-            style.margin = "10px";
-            style.display = "inline";
-            style.width = "7em";
-
-            form.appendChild(okButton);
-            form.appendChild(cancelButton);
-
-            util.addEvent(doc.body, "keyup", checkEscape);
-            dialog.style.top = "50%";
-            dialog.style.left = "50%";
-            dialog.style.display = "block";
-            doc.body.appendChild(dialog);
-
-            // This has to be done AFTER adding the dialog to the form if you
-            // want it to be centered.
-            dialog.style.marginTop = -(position.getHeight(dialog) / 2) + "px";
-            dialog.style.marginLeft = -(position.getWidth(dialog) / 2) + "px";
-
-        };
-
-        // Why is this in a zero-length timeout?
-        // Is it working around a browser bug?
-        setTimeout(function () {
-
-            createDialog();
-
-            var defTextLen = defaultInputText.length;
-            if (input.selectionStart !== undefined) {
-                input.selectionStart = 0;
-                input.selectionEnd = defTextLen;
-            }
-            else if (input.createTextRange) {
-                var range = input.createTextRange();
-                range.collapse(false);
-                range.moveStart("character", -defTextLen);
-                range.moveEnd("character", defTextLen);
-                range.select();
-            }
-
-            input.focus();
-        }, 0);
     };
 
     function UIManager(postfix, panels, undoManager, previewManager, commandManager, helpOptions, getString) {
@@ -1632,9 +1441,7 @@
             chunk.endTag = "";
             this.addLinkDef(chunk, null);
 
-        }
-        else {
-            
+        } else {
             // We're moving start and end tag back into the selection, since (as we're in the else block) we're not
             // *removing* a link, but *adding* one, so whatever findTags() found is now back to being part of the
             // link text. linkEnteredCallback takes care of escaping any brackets.
@@ -1696,8 +1503,7 @@
             if (isImage) {
                 if (!this.hooks.insertImageDialog(linkEnteredCallback))
                     ui.prompt(this.getString("imagedialog"), imageDefaultText, linkEnteredCallback);
-            }
-            else {
+            } else {
                 ui.prompt(this.getString("linkdialog"), linkDefaultText, linkEnteredCallback);
             }
             return true;

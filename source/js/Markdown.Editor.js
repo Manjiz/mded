@@ -394,10 +394,10 @@
     function UndoManager(callback, panels) {
         var undoObj = this;
         var undoStack = []; // A stack of undo states
-        var stackPtr = 0; // The index of the current state
+        var stackPtr = 0;   // The index of the current state
         var mode = 'none';
-        var lastState; // The last state
-        var timer; // The setTimeout handle for cancelling the timer
+        var lastState;      // The last state
+        var timer;          // The setTimeout handle for cancelling the timer
         var inputStateObj;
 
         // Set the mode for later logic steps.
@@ -432,22 +432,18 @@
         };
 
         this.canRedo = function () {
-            if (undoStack[stackPtr + 1]) {
-                return true;
-            }
-            return false;
+            // console.log(undoStack, undoStack.length, stackPtr, Boolean(undoStack[stackPtr + 1]))
+            return undoStack[stackPtr + 1];
         };
 
         // Removes the last state and restores it.
         this.undo = function () {
-
             if (undoObj.canUndo()) {
                 if (lastState) {
                     // What about setting state -1 to null or checking for undefined?
                     lastState.restore();
                     lastState = null;
-                }
-                else {
+                } else {
                     undoStack[stackPtr] = new TextareaState(panels);
                     undoStack[--stackPtr].restore();
 
@@ -464,11 +460,8 @@
 
         // Redo an action.
         this.redo = function () {
-
             if (undoObj.canRedo()) {
-
                 undoStack[++stackPtr].restore();
-
                 if (callback) {
                     callback();
                 }
@@ -615,107 +608,37 @@
     // The input textarea state/contents.
     // This is used to implement undo/redo by the undo manager.
     function TextareaState(panels, isInitialState) {
-        // Aliases
         var stateObj = this;
         var inputArea = panels.input;
         this.init = function () {
-            if (!util.isVisible(inputArea)) {
+            if (!util.isVisible(inputArea) || (!isInitialState && doc.activeElement && doc.activeElement !== inputArea)) {
                 return;
             }
-            if (!isInitialState && doc.activeElement && doc.activeElement !== inputArea) { // this happens when tabbing out of the input box
-                return;
-            }
-
             this.setInputAreaSelectionStartEnd();
             this.scrollTop = inputArea.scrollTop;
             if (!this.text && inputArea.selectionStart || inputArea.selectionStart === 0) {
-                this.text = inputArea.value;
+                this.text = inputArea.value;    // 保存内容
             }
-
         }
 
-        // Sets the selected text in the input box after we've performed an
-        // operation.
+        // Sets the selected text in the input box after we've performed an operation.
         this.setInputAreaSelection = function () {
-
             if (!util.isVisible(inputArea)) {
                 return;
             }
-
-            if (inputArea.selectionStart !== undefined) {
-
-                inputArea.focus();
-                inputArea.selectionStart = stateObj.start;
-                inputArea.selectionEnd = stateObj.end;
-                inputArea.scrollTop = stateObj.scrollTop;
-            }
-            else if (doc.selection) {
-
-                if (doc.activeElement && doc.activeElement !== inputArea) {
-                    return;
-                }
-
-                inputArea.focus();
-                var range = inputArea.createTextRange();
-                range.moveStart("character", -inputArea.value.length);
-                range.moveEnd("character", -inputArea.value.length);
-                range.moveEnd("character", stateObj.end);
-                range.moveStart("character", stateObj.start);
-                range.select();
-            }
+            inputArea.focus();
+            inputArea.setSelectionRange(stateObj.start, stateObj.end);
+            inputArea.scrollTop = stateObj.scrollTop;
         };
 
+        // Undo/Redo 时记住这个state的所选文本
         this.setInputAreaSelectionStartEnd = function () {
-
-            if (!panels.ieCachedRange && (inputArea.selectionStart || inputArea.selectionStart === 0)) {
-
-                stateObj.start = inputArea.selectionStart;
-                stateObj.end = inputArea.selectionEnd;
-            }
-            else if (doc.selection) {
-
-                stateObj.text = util.fixEolChars(inputArea.value);
-
-                // IE loses the selection in the textarea when buttons are
-                // clicked.  On IE we cache the selection. Here, if something is cached,
-                // we take it.
-                var range = panels.ieCachedRange || doc.selection.createRange();
-
-                var fixedRange = util.fixEolChars(range.text);
-                var marker = "\x07";
-                var markedRange = marker + fixedRange + marker;
-                range.text = markedRange;
-                var inputText = util.fixEolChars(inputArea.value);
-
-                range.moveStart("character", -markedRange.length);
-                range.text = fixedRange;
-
-                stateObj.start = inputText.indexOf(marker);
-                stateObj.end = inputText.lastIndexOf(marker) - marker.length;
-
-                var len = stateObj.text.length - util.fixEolChars(inputArea.value).length;
-
-                if (len) {
-                    range.moveStart("character", -fixedRange.length);
-                    while (len--) {
-                        fixedRange += "\n";
-                        stateObj.end += 1;
-                    }
-                    range.text = fixedRange;
-                }
-
-                if (panels.ieCachedRange)
-                    stateObj.scrollTop = panels.ieCachedScrollTop; // this is set alongside with ieCachedRange
-
-                panels.ieCachedRange = null;
-
-                this.setInputAreaSelection();
-            }
+            stateObj.start = inputArea.selectionStart;
+            stateObj.end = inputArea.selectionEnd;
         };
 
         // Restore this state into the input area.
         this.restore = function () {
-
             if (stateObj.text != undefined && stateObj.text != inputArea.value) {
                 inputArea.value = stateObj.text;
             }
@@ -725,7 +648,6 @@
 
         // Gets a collection of HTML chunks from the inptut textarea.
         this.getChunks = function () {
-
             var chunk = new Chunks();
             chunk.before = util.fixEolChars(stateObj.text.substring(0, stateObj.start));
             chunk.startTag = "";
@@ -739,7 +661,6 @@
 
         // Sets the TextareaState properties given a chunk of markdown.
         this.setChunks = function (chunk) {
-
             chunk.before = chunk.before + chunk.startTag;
             chunk.after = chunk.endTag + chunk.after;
 
@@ -749,7 +670,7 @@
             this.scrollTop = chunk.scrollTop;
         };
         this.init();
-    };
+    }
 
     function PreviewManager(converter, panels, previewRefreshCallback) {
         var managerObj = this;
@@ -875,7 +796,6 @@
     };
 
     function UIManager(postfix, panels, undoManager, previewManager, commandManager, helpOptions, getString) {
-
         var inputBox = panels.input,
             buttons = {}; // buttons.undo, buttons.link, etc. The actual DOM elements.
 
@@ -889,49 +809,19 @@
                 var keyCode = key.keyCode;
                 var keyCodeStr = String.fromCharCode(keyCode).toLowerCase();
                 switch (keyCodeStr) {
-                    case "b":
-                        doClick(buttons.bold);
-                        break;
-                    case "i":
-                        doClick(buttons.italic);
-                        break;
-                    case "l":
-                        doClick(buttons.link);
-                        break;
-                    case "q":
-                        doClick(buttons.quote);
-                        break;
-                    case "k":
-                        doClick(buttons.code);
-                        break;
-                    case "g":
-                        doClick(buttons.image);
-                        break;
-                    case "o":
-                        doClick(buttons.olist);
-                        break;
-                    case "u":
-                        doClick(buttons.ulist);
-                        break;
-                    case "h":
-                        doClick(buttons.heading);
-                        break;
-                    case "r":
-                        doClick(buttons.hr);
-                        break;
-                    case "y":
-                        doClick(buttons.redo);
-                        break;
-                    case "z":
-                        if (key.shiftKey) {
-                            doClick(buttons.redo);
-                        }
-                        else {
-                            doClick(buttons.undo);
-                        }
-                        break;
-                    default:
-                        return;
+                    case "b": doClick(buttons.bold); break;
+                    case "i": doClick(buttons.italic); break;
+                    case "l": doClick(buttons.link); break;
+                    case "q": doClick(buttons.quote); break;
+                    case "k": doClick(buttons.code); break;
+                    case "g": doClick(buttons.image); break;
+                    case "o": doClick(buttons.olist); break;
+                    case "u": doClick(buttons.ulist); break;
+                    case "h": doClick(buttons.heading); break;
+                    case "r": doClick(buttons.hr); break;
+                    case "y": doClick(buttons.redo); break;
+                    case "z": key.shiftKey ? doClick(buttons.redo) : doClick(buttons.undo); break;
+                    default: return;
                 }
 
 

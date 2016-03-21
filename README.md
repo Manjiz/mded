@@ -147,3 +147,80 @@ gte IE9, gte FF3.5, gte Chrome4, gte Safari3.1, gte Opera10.5 才开始支持 tr
 意思是，在IE中，如果一个元素包含在 table 里的任意位置，那么如果要给他设置 innerHTML 是不可能的，解决办法是，把元素移除，再设置 innerHTML，最后重新插进去。
 
 （这是哪个版本的 IE？我没测试过，有兴趣的可以去试下）
+
+### IE的textarea会在点击按钮的时候丢失selection
+
+### 文本选择
+
+两个标准：
+
+#### IE 6/7/8
+
+把HTML降格为普通文本操作，逻辑上就存在很大问题，对富文本的操作会麻烦很多。
+
+`TextRange` 对象
+
+``` javascript
+var range = document.selection.createRange();
+var editor = document.getElementById('editor');
+
+// 选中目标所有文字
+range.moveToElementText(editor);
+
+// 抛弃选区结束位置
+// 并不是简单地将结束位置移到开始位置
+// 所以接下来改变开始位置，结束位置不会再改变
+range.collapse();
+
+// 把当前选区的结束位置后移16个字符
+range.moveEnd('character', 16);
+
+range.select();
+
+// 要获取选区的信息不是很容易，需要用到个setEndPoint的方法，自己查去
+```
+
+#### 新标准
+
+将操作精确到节点。
+
+`Range` 对象
+
+``` javascript
+var editor = document.getElementById('editor');
+var childNodes = editor.childNodes;
+var selection = getSelection();
+var range = document.reateRange();
+
+// 第二个参数有两种意义
+//  - 如果节点是文本，那第二个参数是第几个字符
+//  - 如果节点是dom，那第二个参数是该dom子节点的索引
+range.setStart(childNodes[2], 0);
+range.setEnd(childNodes[3], 0);
+
+// 移除selection中原有的所有range
+selection.removeAllRanges();
+
+selection.addRange(range);
+
+// 获取信息也非常容易嘛
+var s = selection;
+// 分别是 开始对象，开始位置，结束对象，结束位置
+console.log(s.anchorNode, s.anchorOffset, s.focusNode, s.focusOffset);
+```
+
+#### 其他
+
+输入性节点对象的方法：
+
+`inputElement.setSelectionRange(selectionStart, selectionEnd, [optional] selectionDirection);`
+
+``` javascript
+inputArea.selectionStart = 0;
+inputArea.selectionEnd = 16;
+```
+
+参考：
+
+ - [selection对象和range对象在不同浏览器上的操作差异](https://www.web-tinker.com/article/20027.html)
+ - [MDN setSelectionRange](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/setSelectionRange)
